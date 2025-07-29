@@ -4,12 +4,22 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+<<<<<<< HEAD
 	"github.com/lib/pq"
 	"gorm.io/gorm"
+=======
+>>>>>>> 5c88cfca346132f226b84612e912772ead8812be
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
+<<<<<<< HEAD
+=======
+
+	"github.com/lib/pq"
+
+	"github.com/jinzhu/gorm"
+>>>>>>> 5c88cfca346132f226b84612e912772ead8812be
 )
 
 type WithTableName interface {
@@ -265,7 +275,7 @@ func (c CrudRepository) prepareTime(val time.Time) string {
 	return fmt.Sprintf("'%s'", val.Format("2006-01-02T15:04:05-0700"))
 }
 
-func (c CrudRepository) prepareSliceOfNumbers(values interface{}) string {
+func (c CrudRepository) prepareSliceValue(values interface{}) string {
 	result := "{}"
 	switch reflect.TypeOf(values).Kind() {
 	case reflect.Slice:
@@ -293,6 +303,8 @@ func (c CrudRepository) CreateOrUpdateMany(
 		return nil
 	}
 
+	tableName := c.Db.NewScope(item).TableName()
+
 	var valueStrings []string
 	for _, valueMap := range values {
 		var valueRowString []string
@@ -300,7 +312,7 @@ func (c CrudRepository) CreateOrUpdateMany(
 
 			colVal, ok := valueMap[column]
 			if !ok {
-				return errors.New(fmt.Sprintf("CreateOrUpdateMany: value for column %s found", column))
+				return errors.New(fmt.Sprintf("CreateOrUpdateMany: value for column %s found, table: %s", column, tableName))
 			}
 
 			// stringify column value
@@ -355,8 +367,8 @@ func (c CrudRepository) CreateOrUpdateMany(
 				} else {
 					val = "NULL"
 				}
-			case []int64, []int32, []uint8, []float64, []float32, pq.Int64Array, pq.Float64Array:
-				val = c.prepareSliceOfNumbers(v)
+			case []int64, []int32, []uint8, []float64, []float32, pq.Int64Array, pq.Float64Array, []string, pq.StringArray:
+				val = c.prepareSliceValue(v)
 			default:
 				if reflect.TypeOf(colVal).Kind() == reflect.String {
 					val = c.quote(val)
@@ -370,7 +382,11 @@ func (c CrudRepository) CreateOrUpdateMany(
 	}
 
 	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES %s %s",
+<<<<<<< HEAD
 		c.GetTableName(item),
+=======
+		tableName,
+>>>>>>> 5c88cfca346132f226b84612e912772ead8812be
 		strings.Join(columns, ","),
 		strings.Join(valueStrings, ","),
 		onConflict)
@@ -378,7 +394,7 @@ func (c CrudRepository) CreateOrUpdateMany(
 	err := c.Db.Exec(query).Error
 	err = NormalizeErr(err)
 	if nil != err {
-		c.Logger.Errorf("gorm-crud: Error in the CreateOrUpdateMany(): %v", err)
+		c.Logger.Errorf("gorm-crud: Error in the CreateOrUpdateMany(): %v, table: %s", err, tableName)
 	}
 
 	return err
