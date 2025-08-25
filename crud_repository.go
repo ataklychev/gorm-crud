@@ -4,22 +4,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-<<<<<<< HEAD
 	"github.com/lib/pq"
 	"gorm.io/gorm"
-=======
->>>>>>> 5c88cfca346132f226b84612e912772ead8812be
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
-<<<<<<< HEAD
-=======
-
-	"github.com/lib/pq"
-
-	"github.com/jinzhu/gorm"
->>>>>>> 5c88cfca346132f226b84612e912772ead8812be
 )
 
 type WithTableName interface {
@@ -303,7 +293,7 @@ func (c CrudRepository) CreateOrUpdateMany(
 		return nil
 	}
 
-	tableName := c.Db.NewScope(item).TableName()
+	tableName := c.GetTableName(item)
 
 	var valueStrings []string
 	for _, valueMap := range values {
@@ -382,11 +372,7 @@ func (c CrudRepository) CreateOrUpdateMany(
 	}
 
 	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES %s %s",
-<<<<<<< HEAD
-		c.GetTableName(item),
-=======
 		tableName,
->>>>>>> 5c88cfca346132f226b84612e912772ead8812be
 		strings.Join(columns, ","),
 		strings.Join(valueStrings, ","),
 		onConflict)
