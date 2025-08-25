@@ -390,7 +390,12 @@ func (c CrudRepository) GetTableName(item InterfaceEntity) string {
 	if val, ok := item.(WithTableName); ok {
 		return val.TableName()
 	}
-	return c.Db.Model(&item).Statement.Table
+	stmt := &gorm.Statement{DB: c.Db}
+	stmt.Parse(&item)
+	if nil != stmt.Schema {
+		return stmt.Schema.Table
+	}
+	return ""
 }
 
 func (c CrudRepository) Update(item InterfaceEntity) InterfaceEntity {
