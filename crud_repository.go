@@ -4,15 +4,17 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/lib/pq"
+	"gorm.io/gorm"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/lib/pq"
-
-	"github.com/jinzhu/gorm"
 )
+
+type WithTableName interface {
+	TableName() string
+}
 
 type ListParametersInterface interface{}
 
@@ -79,7 +81,7 @@ func (c BaseListQueryBuilder) paginationQuery(parameters ListParametersInterface
 
 	limit := pageSize
 	offset := page * pageSize
-	query = query.Offset(offset).Limit(limit)
+	query = query.Offset(int(offset)).Limit(int(limit))
 
 	var orderBy string
 	if hasPaginationParams {
@@ -99,9 +101,9 @@ func (c BaseListQueryBuilder) paginationQuery(parameters ListParametersInterface
 
 	if len(orderBy) > 0 {
 		if orderDesc {
-			query = query.Order(fmt.Sprintf("%s DESC", orderBy), true)
+			query = query.Order(fmt.Sprintf("%s DESC", orderBy))
 		} else {
-			query = query.Order(fmt.Sprintf("%s ASC", orderBy), true)
+			query = query.Order(fmt.Sprintf("%s ASC", orderBy))
 		}
 	}
 
@@ -291,7 +293,7 @@ func (c CrudRepository) CreateOrUpdateMany(
 		return nil
 	}
 
-	tableName := c.Db.NewScope(item).TableName()
+	tableName := c.GetTableName(item)
 
 	var valueStrings []string
 	for _, valueMap := range values {
@@ -382,6 +384,18 @@ func (c CrudRepository) CreateOrUpdateMany(
 	}
 
 	return err
+}
+
+func (c CrudRepository) GetTableName(item InterfaceEntity) string {
+	if val, ok := item.(WithTableName); ok {
+		return val.TableName()
+	}
+	stmt := &gorm.Statement{DB: c.Db}
+	stmt.Parse(&item)
+	if nil != stmt.Schema {
+		return stmt.Schema.Table
+	}
+	return ""
 }
 
 func (c CrudRepository) Update(item InterfaceEntity) InterfaceEntity {
